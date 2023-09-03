@@ -1,5 +1,6 @@
 {
   "language": "kz",
+  "languageName": "Kazakh",
   "keywords": {
     "abstract": "абстракттар",
     "and": "және",
@@ -44,7 +45,7 @@
     "new": "жаңа",
     "null": "нөлдік",
     "of": "бастап",
-    "open": "from",
+    "open": "open",
     "or": "немесе",
     "override": "өзгерту",
     "private": "жеке",

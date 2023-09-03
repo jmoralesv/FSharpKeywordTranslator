@@ -1,5 +1,9 @@
-﻿@inherits LayoutComponentBase
+﻿@using System.Text;
+@using FSharpKeywordTranslator.Core;
+@inherits LayoutComponentBase
 @inject LanguageConfigurationManager languageManager
+@inject IJSRuntime JS
+@inject HttpClient HttpClient
 
 <div class="page">
     <div class="sidebar">
@@ -14,6 +18,7 @@
                     <option value="@item.Code"><span class="fi fi-@item.Country"></span> @item.Name</option>
                 }
             </select>
+            <button class="btn btn-primary" @onclick="DownloadPatch" disabled="@IsPatchDownloadDisabled">Patch</button>
             <a href="https://github.com/kant2002/FSharpKeywordTranslator" target="_blank">Github</a>
             <a href="https://github.com/kant2002/fsharp/" target="_blank">About</a>
         </div>
@@ -28,6 +33,8 @@
 
 @code {
     public string Language { get; set; } = "en";
+
+    public bool IsPatchDownloadDisabled => Language == "en";
 
     LanguageConfiguration current;
 
@@ -44,5 +51,14 @@
     {
         Language = (string)e.Value!;
         await languageManager.SetLanguageAsync(Language);
+    }
+
+    public async Task DownloadPatch(MouseEventArgs e)
+    {
+        var patchGenerator = new PatchGenerator();
+        var fileName = "fsharp-compiler-net8.patch";
+        var fileStream = patchGenerator.GenerateFSharpPatch(current);
+
+        await JS.InvokeVoidAsync("downloadFileFromStream", fileName, fileStream);
     }
 }
