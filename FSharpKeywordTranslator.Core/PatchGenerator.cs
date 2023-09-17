@@ -6,8 +6,45 @@ public class PatchGenerator
 {
     public string GenerateFSharpPatch(LanguageConfiguration current)
     {
-        var fileStream = GetFileStream();
-        fileStream = fileStream.Replace("{LanguageName}", current.LanguageName ?? current.Language);
+        var patchTemplate = GetFSharpPatchTemplate();
+        return ApplyKeywords(current, patchTemplate);
+    }
+
+    public string GenerateFableReplPatch(LanguageConfiguration current)
+    {
+        var patchTemplate = GetFableReplPatchTemplate(current.Language)
+            ??
+            """
+            ---
+            diff --git a/src/App/Prelude.fs b/src/App/Prelude.fs
+            index ece83b0..c8ec73d 100644
+            --- a/src/App/Prelude.fs
+            +++ b/src/App/Prelude.fs
+            @@ -15,7 +15,8 @@ module Literals =
+                     // "http://localhost:8080"
+                     Browser.Dom.window.location.href
+             #else
+            -        "https://fable.io/repl/"
+            +        Browser.Dom.window.location.href
+            +        //"https://fable.io/repl/"
+             #endif
+                 printfn $"HOST {HOST}"
+             
+            -- 
+            2.37.1.windows.1
+            """.ReplaceLineEndings("\n");
+        return patchTemplate;
+    }
+
+    public string GenerateSimpleFSharpPatch(LanguageConfiguration current)
+    {
+        var patchTemplate = GetFableFSharpPatchTemplate();
+        return ApplyKeywords(current, patchTemplate);
+    }
+
+    private string ApplyKeywords(LanguageConfiguration current, string patchTemplate)
+    {
+        patchTemplate = patchTemplate.Replace("{LanguageName}", current.LanguageName ?? current.Language);
         var keywords = new StringBuilder();
         var keywordsOverrideCount = 6;
         keywordsOverrideCount += RegisterKeywordOverride(keywords, current.Keywords.Abstract, true, "ABSTRACT");
@@ -79,10 +116,10 @@ public class PatchGenerator
             keywords = keywords.Remove(keywords.Length - 1, 1);
         }
 
-        fileStream = fileStream.Replace("{KEYWORDS_OVERRIDE}", keywords.ToString());
-        fileStream = fileStream.Replace("{KEYWORDS_OVERRIDE_COUNT}", keywordsOverrideCount.ToString());
+        patchTemplate = patchTemplate.Replace("{KEYWORDS_OVERRIDE}", keywords.ToString());
+        patchTemplate = patchTemplate.Replace("{KEYWORDS_OVERRIDE_COUNT}", keywordsOverrideCount.ToString());
 
-        return fileStream;
+        return patchTemplate;
     }
 
     int RegisterKeywordOverride(StringBuilder keywords, string keywordOverride, bool fsharp, string token)
@@ -110,10 +147,32 @@ public class PatchGenerator
         return i;
     }
 
-    private string GetFileStream()
+    private string GetFSharpPatchTemplate()
     {
         using var patchStream = typeof(PatchGenerator).Assembly.GetManifestResourceStream("FSharpKeywordTranslator.Core.patches.fsharp-compiler-net8.txt") ?? throw new InvalidDataException("The patch for F# compiler is missing from the assembly.");
         using var stringReader = new StreamReader(patchStream);
         return stringReader.ReadToEnd();
+    }
+
+    private string GetFableFSharpPatchTemplate()
+    {
+        using var patchStream = typeof(PatchGenerator).Assembly.GetManifestResourceStream("FSharpKeywordTranslator.Core.patches.fsharp-compiler-net8-simple.patch") ?? throw new InvalidDataException("The patch for Fable F# compiler is missing from the assembly.");
+        using var stringReader = new StreamReader(patchStream);
+        return stringReader.ReadToEnd();
+    }
+
+    private string? GetFableReplPatchTemplate(string language)
+    {
+        var patchStream = typeof(PatchGenerator).Assembly.GetManifestResourceStream($"FSharpKeywordTranslator.Core.patches.repl-{language}.patch");
+        if (patchStream is null)
+        {
+            return null;
+        }
+
+        using (patchStream)
+        {
+            using var stringReader = new StreamReader(patchStream);
+            return stringReader.ReadToEnd();
+        }
     }
 }

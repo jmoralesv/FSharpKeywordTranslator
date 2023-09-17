@@ -1,6 +1,7 @@
 {
   "language": "tr",
   "languageName": "Turkish",
+  "replLink": "https://kant2002.github.io/fable-repl-tr/",
   "keywords": {
     "abstract": "abstre",
     "and": "ve",
@@ -55,7 +56,7 @@
     "sig": "imza",
     "static": "statik",
     "struct": "yapı",
-    "then": "then",
+    "then": "sonra",
     "to": "ile",
     "true": "gerçek",
     "try": "deneyin",
